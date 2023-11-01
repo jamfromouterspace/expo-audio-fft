@@ -1,0 +1,42 @@
+{
+  "name": "expo-audio-fft",
+  "version": "0.1.0",
+  "description": "Get waveform and frequency data from an audio file",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "test": "expo-module test",
+    "prepare": "expo-module prepare",
+    "prepublishOnly": "expo-module prepublishOnly",
+    "expo-module": "expo-module",
+    "open:ios": "open -a \"Xcode\" example/ios",
+    "open:android": "open -a \"Android Studio\" example/android"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "expo-audio-fft",
+    "ExpoAudioFFT"
+  ],
+  "repository": "https://github.com/closetothe/expo-audio-fft",
+  "bugs": {
+    "url": "https://github.com/closetothe/expo-audio-fft/issues"
+  },
+  "author": "Jamiel Rahi <app.gildew@gmail.com> (https://github.com/closetothe)",
+  "license": "MIT",
+  "homepage": "https://github.com/closetothe/expo-audio-fft#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/react": "^18.0.25",
+    "expo-module-scripts": "^3.0.11",
+    "expo-modules-core": "^1.5.11"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "expo-audio-fft": ["../src/index"],
+      "expo-audio-fft/*": ["../src/*"]
+    }
+  }
+}
