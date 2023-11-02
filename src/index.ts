@@ -13,8 +13,8 @@ export function hello(): string {
   return ExpoAudioFFTModule.hello();
 }
 
-export async function setValueAsync(value: string) {
-  return await ExpoAudioFFTModule.setValueAsync(value);
+export async function getWaveformData(localUri: string, sampleCount: number): Promise<number[]> {
+  return await ExpoAudioFFTModule.getWaveformData(localUri, sampleCount);
 }
 
 const emitter = new EventEmitter(ExpoAudioFFTModule ?? NativeModulesProxy.ExpoAudioFFT);
