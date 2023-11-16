@@ -55,6 +55,7 @@ class AudioProcessor {
     }
     func stop() {
         startFrom = nil
+        currentTimeOffset = 0
         player.stop()
     }
     
@@ -147,6 +148,7 @@ class AudioProcessor {
     
     func load(localUri: String) {
         startFrom = nil
+        currentTimeOffset = 0
         metadata = try! AudioMetadata(localUri: localUri)
         player.stop()
         player.scheduleFile(metadata!.file, at: nil)
