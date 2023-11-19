@@ -40,6 +40,7 @@ class AudioProcessor {
         if metadata == nil {
             return
         }
+        try! AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         if startFrom != nil {
             player.stop()
             let frameCount = AVAudioFrameCount(metadata!.totalSamples - UInt32(startFrom!))
@@ -129,7 +130,7 @@ class AudioProcessor {
                 } else {
                     bandMagnitudes = calculateLogarithmicBands(fftData: rawMagnitudes, numberOfBands: numBands)
                 }
-                let currentTime = currentTime(sampleTime: time)
+                let currentTime = currentTime()
                 // send to JS thread
                 onData(fftMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime)
             }
@@ -286,7 +287,7 @@ class AudioProcessor {
         return Float((startFrequency + endFrequency) / 2)
     }
     
-    func currentTime(sampleTime: AVAudioTime) -> Double {
+    func currentTime() -> Double {
         if metadata == nil {
             return 0
         }

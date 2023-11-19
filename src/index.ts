@@ -37,6 +37,10 @@ export function seek(toSeconds: number): string {
   return ExpoAudioFFTModule.seek(toSeconds);
 }
 
+export function currentTime(): number {
+  return ExpoAudioFFTModule.currentTime();
+}
+
 export type AudioMetadata = {
   duration: number, 
   numChannels: number,

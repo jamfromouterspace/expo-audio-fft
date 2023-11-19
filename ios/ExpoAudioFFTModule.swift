@@ -41,6 +41,10 @@ public class ExpoAudioFFTModule: Module {
             })
         }
         
+        Function("currentTime") {
+            return audioProcessor?.currentTime()
+        }
+        
         Function("load") { localUri in
             audioProcessor?.load(localUri: localUri)
         }
