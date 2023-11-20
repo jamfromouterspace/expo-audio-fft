@@ -11,6 +11,7 @@ class AudioProcessor {
     private var startFrom: AVAudioFramePosition?
     private var currentTimeOffset: Double = 0.0 // this is because when we seek, the playerTime sample count resets to 0
     var numBands: Int = 80
+    var currentTime: Double = 0.0
     var bandingMethod: String = "logarithmic"
     var nyquistFrequency: Double {
         get {
@@ -57,13 +58,14 @@ class AudioProcessor {
     func stop() {
         startFrom = nil
         currentTimeOffset = 0
+        currentTime = 0
         player.stop()
     }
     
-    func seek(to: Double) {
+    func seek(to: Double) -> Double? {
         if metadata == nil {
             print("Error: audio file not loaded (seek)")
-            return
+            return nil
         }
         if let nodeTime = player.lastRenderTime, let playerTime = player.playerTime(forNodeTime: nodeTime), player.isPlaying {
             player.stop()
@@ -75,9 +77,11 @@ class AudioProcessor {
             player.scheduleSegment(metadata!.file, startingFrame: AVAudioFramePosition(frames), frameCount: frameCount, at: nil, completionHandler: nil)
             player.play()
             currentTimeOffset = to
+            return to
         } else {
             currentTimeOffset = to
             startFrom = AVAudioFramePosition(Int(to * metadata!.sampleRate))
+            return to
         }
     }
 
@@ -130,7 +134,7 @@ class AudioProcessor {
                 } else {
                     bandMagnitudes = calculateLogarithmicBands(fftData: rawMagnitudes, numberOfBands: numBands)
                 }
-                let currentTime = currentTime()
+                setCurrentTime()
                 // send to JS thread
                 onData(fftMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime)
             }
@@ -150,6 +154,7 @@ class AudioProcessor {
     func load(localUri: String) {
         startFrom = nil
         currentTimeOffset = 0
+        currentTime = 0
         metadata = try! AudioMetadata(localUri: localUri)
         player.stop()
         player.scheduleFile(metadata!.file, at: nil)
@@ -287,14 +292,14 @@ class AudioProcessor {
         return Float((startFrequency + endFrequency) / 2)
     }
     
-    func currentTime() -> Double {
-        if metadata == nil {
-            return 0
+    func setCurrentTime() -> Void {
+        if self.metadata == nil {
+            self.currentTime = 0
+        } else if let nodeTime = self.player.lastRenderTime, let playerTime = self.player.playerTime(forNodeTime: nodeTime) {
+            self.currentTime = self.currentTimeOffset + Double(playerTime.sampleTime) / self.metadata!.sampleRate
+        } else {
+            self.currentTime = 0
         }
-        if let nodeTime = player.lastRenderTime, let playerTime = player.playerTime(forNodeTime: nodeTime) {
-            return currentTimeOffset + Double(playerTime.sampleTime) / metadata!.sampleRate
-        }
-        return 0
     }
 }
 

@@ -42,7 +42,7 @@ public class ExpoAudioFFTModule: Module {
         }
         
         Function("currentTime") {
-            return audioProcessor?.currentTime()
+            return audioProcessor?.currentTime
         }
         
         Function("load") { localUri in
