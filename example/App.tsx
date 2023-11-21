@@ -71,14 +71,24 @@ export default function App() {
     ExpoAudioFFT.load(result.assets[0].uri)
   }
 
+  const onPickVideo = async () => {
+    const result = await getDocumentAsync({
+      copyToCacheDirectory: true,
+      multiple: false,
+      type: "video/*",
+    })
+  }
+
   const onPlayPause = () => {
     if (!isInitialized) {
       return
     }
     if (isPlaying) {
+      console.log("pressing pause....")
       ExpoAudioFFT.pause()
       setIsPlaying(false)
     } else {
+      console.log("pressing PLAY!!!....")
       ExpoAudioFFT.play()
       setIsPlaying(true)
     }
@@ -97,6 +107,19 @@ export default function App() {
         }}
       >
         <Text style={{ color: "white" }}>{"PICK FILE"}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        onPress={onPickVideo} 
+        style={{ 
+          backgroundColor: "black",
+          padding: 12, 
+          paddingLeft: 20, 
+          paddingRight: 20, 
+          borderRadius: 10, 
+          margin: 10
+        }}
+      >
+        <Text style={{ color: "white" }}>{"PICK VIDEO"}</Text>
       </TouchableOpacity>
       {isInitialized ? (
         <TouchableOpacity 

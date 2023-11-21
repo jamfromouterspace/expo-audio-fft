@@ -13,6 +13,7 @@ class AudioProcessor {
     var numBands: Int = 80
     var currentTime: Double = 0.0
     var bandingMethod: String = "logarithmic"
+    var onData: (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void
     var nyquistFrequency: Double {
         get {
             if metadata == nil {
@@ -38,7 +39,8 @@ class AudioProcessor {
     }
     
     func play() {
-        if metadata == nil {
+        restartEngine()
+        if metadata == nil || player.engine == nil || !player.engine!.isRunning {
             return
         }
         try! AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -53,6 +55,9 @@ class AudioProcessor {
         }
     }
     func pause() {
+        if metadata == nil || player.engine == nil || !player.engine!.isRunning {
+            return
+        }
         player.pause()
     }
     func stop() {
@@ -70,10 +75,11 @@ class AudioProcessor {
         if let nodeTime = player.lastRenderTime, let playerTime = player.playerTime(forNodeTime: nodeTime), player.isPlaying {
             player.stop()
             let sampleRate = playerTime.sampleRate // we could also use metadata.sampleRate, but playerTime has to be non-nil for this to work
-            let frames = Int(to * sampleRate)
+            let frames = Int64(to * sampleRate)
+            print("to: \(to)", "frames: \(frames)", "total samples: \(metadata!.totalSamples)")
             let newPlayerTime = AVAudioTime(sampleTime: AVAudioFramePosition(frames), atRate: sampleRate)
             let newNodeTime = player.nodeTime(forPlayerTime: newPlayerTime)
-            let frameCount = AVAudioFrameCount(metadata!.totalSamples - UInt32(frames))
+            let frameCount = AVAudioFrameCount(max(1, Int64(metadata!.totalSamples) - frames))
             player.scheduleSegment(metadata!.file, startingFrame: AVAudioFramePosition(frames), frameCount: frameCount, at: nil, completionHandler: nil)
             player.play()
             currentTimeOffset = to
@@ -87,6 +93,20 @@ class AudioProcessor {
 
     
     init(onData: @escaping (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void) {
+        self.onData = onData
+        startEngine()
+    }
+    
+    func restartEngine() {
+        if player.engine != nil && !player.engine!.isRunning {
+            print("restarting engine...")
+            // restart audio engine
+            startEngine()
+            seek(to: currentTime)
+        }
+    }
+    
+    func startEngine() {
         // initialize the main mixer node singleton
         _ = engine.mainMixerNode
         
@@ -97,6 +117,7 @@ class AudioProcessor {
                 
         let format = engine.mainMixerNode.outputFormat(forBus: 0)
         
+        engine.detach(player)
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
                 
@@ -105,14 +126,15 @@ class AudioProcessor {
             UInt(bufferSize),
             vDSP_DFT_Direction.FORWARD
         )
-        
+                    
+        engine.mainMixerNode.removeTap(onBus: 0)
         engine.mainMixerNode.installTap(
             onBus: 0,
             bufferSize: UInt32(bufferSize),
             format: nil
         ) { [self] buffer, time in
             guard let channelData = buffer.floatChannelData?[0] else { return }
-            if player.isPlaying {
+            if player.isPlaying && player.engine != nil && player.engine!.isRunning {
                 let frames = buffer.frameLength
                 loudness = rms( data: channelData, frameLength: UInt(frames))
                 let rawMagnitudes = fft(data: channelData, setup: fftSetup!)
@@ -137,6 +159,9 @@ class AudioProcessor {
                 setCurrentTime()
                 // send to JS thread
                 onData(fftMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime)
+                if metadata != nil && currentTime >= metadata!.duration {
+                    player.pause()
+                }
             }
         }
     }
@@ -152,6 +177,7 @@ class AudioProcessor {
     
     
     func load(localUri: String) {
+        restartEngine()
         startFrom = nil
         currentTimeOffset = 0
         currentTime = 0
