@@ -11,6 +11,7 @@ import Animated, {
 import { getDocumentAsync } from 'expo-document-picker';
 import { useEffect, useRef, useState } from 'react';
 import Slider from '@react-native-community/slider';
+import * as Linking from "expo-linking"
 
 const numBands = 60 // this must be constant
 
@@ -22,6 +23,26 @@ export default function App() {
   const loudness = useSharedValue(0)
 
   const window = useWindowDimensions()
+
+  const url = Linking.useURL()
+  useEffect(() => {
+    if (url) {
+      if (!isInitialized) {
+        ExpoAudioFFT.init()
+        setIsInitialized(true)
+      } 
+      const metadata = ExpoAudioFFT.getMetadata(url)
+      console.log("metadata", metadata)
+      if (!metadata.duration) {
+        console.warn("ERROR: Failed to load song", metadata)
+        setIsInitialized(false)
+        return
+      }
+      setDuration(metadata.duration)
+      // console.log("metadata", metadata)
+      ExpoAudioFFT.load(url)
+    }
+  }, [url])
 
   const magnitudes = useRef<Animated.SharedValue<number>[]>([])
   for (let i = 0; i < numBands; i++) {
@@ -61,6 +82,7 @@ export default function App() {
       setIsInitialized(true)
     } 
     const metadata = ExpoAudioFFT.getMetadata(result.assets[0].uri)
+    console.log("metadata", metadata)
     if (!metadata.duration) {
       console.warn("ERROR: Failed to load song", metadata)
       setIsInitialized(false)

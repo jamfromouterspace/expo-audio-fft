@@ -45,8 +45,12 @@ class AudioProcessor {
         }
         try! AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         if startFrom != nil {
+            if startFrom! < 0 {
+                startFrom = 0
+            }
+            let diff = metadata!.totalSamples - UInt32(startFrom!)
+            let frameCount = AVAudioFrameCount(diff > 0 ? diff : 0)
             player.stop()
-            let frameCount = AVAudioFrameCount(metadata!.totalSamples - UInt32(startFrom!))
             player.scheduleSegment(metadata!.file, startingFrame: startFrom!, frameCount: frameCount, at: nil)
             player.play()
             startFrom = nil
