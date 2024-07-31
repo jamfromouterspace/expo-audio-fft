@@ -27,6 +27,7 @@ export default function App() {
   const url = Linking.useURL()
   useEffect(() => {
     if (url) {
+      console.log("url", url)
       if (!isInitialized) {
         ExpoAudioFFT.init()
         setIsInitialized(true)
@@ -81,6 +82,7 @@ export default function App() {
       ExpoAudioFFT.init()
       setIsInitialized(true)
     } 
+    ExpoAudioFFT.load(result.assets[0].uri)
     const metadata = ExpoAudioFFT.getMetadata(result.assets[0].uri)
     console.log("metadata", metadata)
     if (!metadata.duration) {
@@ -90,7 +92,6 @@ export default function App() {
     }
     setDuration(metadata.duration)
     // console.log("metadata", metadata)
-    ExpoAudioFFT.load(result.assets[0].uri)
   }
 
   const onPickVideo = async () => {
