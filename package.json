@@ -1,6 +1,6 @@
 {
   "name": "expo-audio-fft",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Get waveform and frequency data from an audio file",
   "main": "build/index.js",
   "types": "build/index.d.ts",
