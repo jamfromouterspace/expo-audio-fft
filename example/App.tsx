@@ -26,7 +26,8 @@ export default function App() {
 
   const url = Linking.useURL()
   useEffect(() => {
-    if (url) {
+    ExpoAudioFFT.init()
+    if (url && !url.startsWith("expo")) {
       console.log("url", url)
       if (!isInitialized) {
         ExpoAudioFFT.init()
@@ -51,9 +52,16 @@ export default function App() {
     magnitudes.current[i] = useSharedValue(0)
   }
   useEffect(() =>{ 
+    console.log("yo")
     ExpoAudioFFT.addAudioBufferListener(event => {
       loudness.value = event.loudness*100
       // console.log("frequencies", event.bandMagnitudes.length)
+      // console.log("rawMagnitudes", event.rawMagnitudes)
+      console.log("loudness", event.loudness)
+      console.log("currentTime", event.currentTime)
+      console.log("bandMagnitudes", event.bandMagnitudes)
+      console.log("bandFrequencies", event.bandFrequencies)
+
       const mags = gaussianBlur(event.bandMagnitudes)
       magnitudes.current.forEach(((_, i) => {
         const prevValue = magnitudes.current[i].value

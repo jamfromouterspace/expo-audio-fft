@@ -86,4 +86,8 @@ repositories {
 dependencies {
   implementation project(':expo-modules-core')
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
+  def media3_version = "1.1.1"
+  implementation "androidx.media3:media3-exoplayer:$media3_version"
+  implementation "androidx.media3:media3-common:$media3_version"
+  implementation 'com.github.wendykierp:JTransforms:3.1'
 }
