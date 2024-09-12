@@ -13,13 +13,12 @@ import { useEffect, useRef, useState } from 'react';
 import Slider from '@react-native-community/slider';
 import * as Linking from "expo-linking"
 
-const numBands = 60 // this must be constant
+const numBands = 20 // this must be constant
 
 export default function App() {
   const [duration, setDuration] = useState(0)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [loudness2, setLoudness2] = useState(0)
   const loudness = useSharedValue(0)
 
   const window = useWindowDimensions()
@@ -52,26 +51,37 @@ export default function App() {
     magnitudes.current[i] = useSharedValue(0)
   }
   useEffect(() =>{ 
-    console.log("yo")
     ExpoAudioFFT.addAudioBufferListener(event => {
       loudness.value = event.loudness*100
       // console.log("frequencies", event.bandMagnitudes.length)
       // console.log("rawMagnitudes", event.rawMagnitudes)
-      console.log("loudness", event.loudness)
-      console.log("currentTime", event.currentTime)
-      console.log("bandMagnitudes", event.bandMagnitudes)
-      console.log("bandFrequencies", event.bandFrequencies)
+      // console.log("loudness", event.loudness)
+      // console.log("currentTime", event.currentTime)
+      // console.log("bandMagnitudes", event.bandMagnitudes)
+      // console.log("bandFrequencies", event.bandFrequencies)
 
-      const mags = gaussianBlur(event.bandMagnitudes)
+      // const mags = gaussianBlur(event.bandMagnitudes)
+      const mags = event.bandMagnitudes
+      const prevValue = magnitudes.current[0].value
+        const nextValue = mags[0]*60
+        // const nextValue = Math.random()*50
+        // magnitudes.current[i].value = nextValue
+        // if (Math.abs(nextValue - prevValue) < 10) {
+        // magnitudes.current[0].value = withTiming(nextValue, { 
+        //   duration: 100, 
+        //   easing: Easing.inOut(Easing.ease)
+        // })
       magnitudes.current.forEach(((_, i) => {
         const prevValue = magnitudes.current[i].value
-        const nextValue = mags[i]*100
-        // if (Math.abs(nextValue - prevValue) < 10) {
-         magnitudes.current[i].value = withTiming(nextValue, { 
-          duration: 100, 
-          easing: Easing.inOut(Easing.ease)
-        })
-        // }
+        const nextValue = mags[i]*60
+        // const nextValue = Math.random()*50
+        // magnitudes.current[i].value = nextValue
+        if (Math.abs(nextValue - prevValue) < 10) {
+          magnitudes.current[i].value = withTiming(nextValue, { 
+            duration: 10, 
+            easing: Easing.inOut(Easing.ease)
+          })
+        }
       }))
     })
   }, [])
@@ -137,7 +147,7 @@ export default function App() {
           margin: 10
         }}
       >
-        <Text style={{ color: "white" }}>{"PICK FILE"}</Text>
+        <Text style={{ color: "white" }}>{"PICK FILE 69"}</Text>
       </TouchableOpacity>
       <TouchableOpacity 
         onPress={onPickVideo} 
@@ -177,11 +187,18 @@ export default function App() {
         backgroundColor: "green"
       }}/> */}
       {magnitudes.current.map((mag, i) => (
-        <Animated.View key={i} style={{
-          width: window.width/numBands,
-          height: mag,
-          backgroundColor: "orange"
-        }} />
+        <Animated.View 
+          key={i} 
+          renderToHardwareTextureAndroid
+          style={{
+            width: window.width/numBands,
+            height: mag,
+            backgroundColor: "orange",
+            // transform: [
+            //   { translateY: mag }
+            // ]
+          }} 
+        />
       ))}
       </View>
     </View>
