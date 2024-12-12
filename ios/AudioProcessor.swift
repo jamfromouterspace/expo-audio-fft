@@ -100,7 +100,7 @@ class AudioProcessor {
         onData: @escaping (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void)
     {
         self.onData = onData
-//        startEngine()
+        startEngine()
     }
     
     func restartEngine() {
