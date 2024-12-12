@@ -20,27 +20,27 @@ export function hello(): string {
   return ExpoAudioFFTModule.hello();
 }
 
-export function init(enableFFT = true): string {
+export async function init(enableFFT = true): Promise<string> {
   return ExpoAudioFFTModule.init(enableFFT);
 }
 
-export function load(localUri: string): string {
+export async function load(localUri: string): Promise<string> {
   return ExpoAudioFFTModule.load(localUri);
 }
 
-export function play(): string {
+export async function play(): Promise<string> {
   return ExpoAudioFFTModule.play();
 }
 
-export function pause(): string {
+export async function pause(): Promise<string> {
   return ExpoAudioFFTModule.pause();
 }
 
-export function stop(): string {
+export async function stop(): Promise<string> {
   return ExpoAudioFFTModule.pause();
 }
 
-export function seek(toSeconds: number): string {
+export async function seek(toSeconds: number): Promise<string> {
   return ExpoAudioFFTModule.seek(toSeconds);
 }
 
@@ -55,7 +55,7 @@ export type AudioMetadata = {
   totalSamples: number;
 };
 
-export function getMetadata(localUri: string): AudioMetadata {
+export function getMetadata(localUri: string): Promise<AudioMetadata> {
   return ExpoAudioFFTModule.getMetadata(localUri);
 }
 
@@ -67,7 +67,7 @@ export function setBandingOptions(
     | "avg"
     | "min"
     | "max" = "logarithmic"
-) {
+): Promise<void> {
   return ExpoAudioFFTModule.setBandingOptions(numBands, bandingMethod);
 }
 
