@@ -89,7 +89,7 @@ export default function App() {
         // magnitudes.current[i].value = nextValue
         if (Math.abs(nextValue - prevValue) < 10) {
           magnitudes.current[i].value = withTiming(nextValue, {
-            duration: 10,
+            duration: 100,
             easing: Easing.inOut(Easing.ease),
           });
         }
