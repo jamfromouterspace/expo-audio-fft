@@ -4,12 +4,12 @@ import Foundation
 
 class AudioProcessor {
 //    static var shared: AudioProcessor = .init()
-    
     private let engine = AVAudioEngine()
     private let bufferSize = 1024
     private var metadata: AudioMetadata?
     private var startFrom: AVAudioFramePosition?
     private var currentTimeOffset: Double = 0.0 // this is because when we seek, the playerTime sample count resets to 0
+    var enableFFT = true
     var numBands: Int = 80
     var currentTime: Double = 0.0
     var bandingMethod: String = "logarithmic"
@@ -96,9 +96,11 @@ class AudioProcessor {
     }
 
     
-    init(onData: @escaping (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void) {
+    init(
+        onData: @escaping (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void)
+    {
         self.onData = onData
-        startEngine()
+//        startEngine()
     }
     
     func restartEngine() {
@@ -114,10 +116,18 @@ class AudioProcessor {
         // initialize the main mixer node singleton
         _ = engine.mainMixerNode
         
-        try! AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        } catch {
+            fatalError("Audio engine failed to setCategory: \(error.localizedDescription)")
+        }
         
-        engine.prepare()
-        try! engine.start()
+        do {
+            engine.prepare()
+            try engine.start()
+        } catch {
+            fatalError("Audio engine failed to start: \(error.localizedDescription)")
+        }
                 
         let format = engine.mainMixerNode.outputFormat(forBus: 0)
         
@@ -132,39 +142,41 @@ class AudioProcessor {
         )
                     
         engine.mainMixerNode.removeTap(onBus: 0)
-        engine.mainMixerNode.installTap(
-            onBus: 0,
-            bufferSize: UInt32(bufferSize),
-            format: nil
-        ) { [self] buffer, time in
-            guard let channelData = buffer.floatChannelData?[0] else { return }
-            if player.isPlaying && player.engine != nil && player.engine!.isRunning {
-                let frames = buffer.frameLength
-                loudness = rms( data: channelData, frameLength: UInt(frames))
-                let rawMagnitudes = fft(data: channelData, setup: fftSetup!)
-                fftMagnitudes = rawMagnitudes
-//                let bands = calculateLogarithmicBands(minFrequency: 0, maxFrequency: nyquistFrequency, bandsPerOctave: numBands)
-//                let bandMagnitudes = compressArray(inputArray: fftMagnitudes, compressionFactor: fftMagnitudes.count/60, method: AggregationMethod.average)
-                var bandMagnitudes: [Float]
-                var bandFrequencies: [Float] = []
-                if bandingMethod == "linear" {
-                    let bands = calculateLinearBands(minFrequency: 0, maxFrequency: nyquistFrequency, numberOfBands: numBands)
-                    bandMagnitudes = bands.0
-                    bandFrequencies = bands.1
-                } else if bandingMethod == "avg" {
-                    bandMagnitudes = compressArray(inputArray: rawMagnitudes, compressionFactor: rawMagnitudes.count/numBands, method: .average)
-                } else if bandingMethod == "min" {
-                    bandMagnitudes = compressArray(inputArray: rawMagnitudes, compressionFactor: rawMagnitudes.count/numBands, method: .min)
-                } else if bandingMethod == "max" {
-                    bandMagnitudes = compressArray(inputArray: rawMagnitudes, compressionFactor: rawMagnitudes.count/numBands, method: .max)
-                } else {
-                    bandMagnitudes = calculateLogarithmicBands(fftData: rawMagnitudes, numberOfBands: numBands)
-                }
-                setCurrentTime()
-                // send to JS thread
-                onData(fftMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime)
-                if metadata != nil && currentTime >= metadata!.duration {
-                    player.pause()
+        if (self.enableFFT) {
+            engine.mainMixerNode.installTap(
+                onBus: 0,
+                bufferSize: UInt32(bufferSize),
+                format: nil
+            ) { [self] buffer, time in
+                guard let channelData = buffer.floatChannelData?[0] else { return }
+                if player.isPlaying && player.engine != nil && player.engine!.isRunning {
+                    let frames = buffer.frameLength
+                    loudness = rms( data: channelData, frameLength: UInt(frames))
+                    let rawMagnitudes = fft(data: channelData, setup: fftSetup!)
+                    fftMagnitudes = rawMagnitudes
+                    //                let bands = calculateLogarithmicBands(minFrequency: 0, maxFrequency: nyquistFrequency, bandsPerOctave: numBands)
+                    //                let bandMagnitudes = compressArray(inputArray: fftMagnitudes, compressionFactor: fftMagnitudes.count/60, method: AggregationMethod.average)
+                    var bandMagnitudes: [Float]
+                    var bandFrequencies: [Float] = []
+                    if bandingMethod == "linear" {
+                        let bands = calculateLinearBands(minFrequency: 0, maxFrequency: nyquistFrequency, numberOfBands: numBands)
+                        bandMagnitudes = bands.0
+                        bandFrequencies = bands.1
+                    } else if bandingMethod == "avg" {
+                        bandMagnitudes = compressArray(inputArray: rawMagnitudes, compressionFactor: rawMagnitudes.count/numBands, method: .average)
+                    } else if bandingMethod == "min" {
+                        bandMagnitudes = compressArray(inputArray: rawMagnitudes, compressionFactor: rawMagnitudes.count/numBands, method: .min)
+                    } else if bandingMethod == "max" {
+                        bandMagnitudes = compressArray(inputArray: rawMagnitudes, compressionFactor: rawMagnitudes.count/numBands, method: .max)
+                    } else {
+                        bandMagnitudes = calculateLogarithmicBands(fftData: rawMagnitudes, numberOfBands: numBands)
+                    }
+                    setCurrentTime()
+                    // send to JS thread
+                    onData(fftMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime)
+                    if metadata != nil && currentTime >= metadata!.duration {
+                        player.pause()
+                    }
                 }
             }
         }
@@ -180,12 +192,12 @@ class AudioProcessor {
     }
     
     
-    func load(localUri: String) {
+    func load(localUri: String) throws {
         restartEngine()
         startFrom = nil
         currentTimeOffset = 0
         currentTime = 0
-        metadata = try! AudioMetadata(localUri: localUri)
+        metadata = try AudioMetadata(localUri: localUri)
         player.stop()
         player.scheduleFile(metadata!.file, at: nil)
     }

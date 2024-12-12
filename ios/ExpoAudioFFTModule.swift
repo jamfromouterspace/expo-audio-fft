@@ -26,7 +26,7 @@ public class ExpoAudioFFTModule: Module {
             return "Hello world 👋"
         }
         
-        Function("init") {
+        AsyncFunction("init") { disableFFT in
             audioProcessor = AudioProcessor(onData: { rawMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime in
                 self.sendEvent("onAudioBuffer", [
                     "rawMagnitudes": rawMagnitudes,
@@ -39,44 +39,42 @@ public class ExpoAudioFFTModule: Module {
                     "currentTime": currentTime
                 ])
             })
+            if disableFFT {
+                audioProcessor!.enableFFT = false
+            }
         }
         
         Function("currentTime") {
             return audioProcessor?.currentTime
         }
         
-        Function("load") { localUri in
-            audioProcessor?.load(localUri: localUri)
+        AsyncFunction("load") { localUri in
+            try audioProcessor?.load(localUri: localUri)
         }
         
-        Function("setBandingOptions") { numBands, bandingMethod in
+        AsyncFunction("setBandingOptions") { numBands, bandingMethod in
             audioProcessor?.setBandingOptions(numBands: numBands, bandingMethod: bandingMethod)
         }
         
-        Function("getMetadata") { (localUri: String) -> [String: Any]? in
-            do {
-                let metadata = try AudioMetadata(localUri: localUri)
-                return [
-                    "duration": metadata.duration,
-                    "sampleRate": metadata.sampleRate,
-                    "totalSamples": metadata.totalSamples,
-                    "channelCount": metadata.channelCount,
-                ]
-            } catch {
-                print("Failed to get metadata \(error)")
-                return nil
-            }
+        AsyncFunction("getMetadata") { (localUri: String) -> [String: Any]? in
+            let metadata = try AudioMetadata(localUri: localUri)
+            return [
+                "duration": metadata.duration,
+                "sampleRate": metadata.sampleRate,
+                "totalSamples": metadata.totalSamples,
+                "channelCount": metadata.channelCount,
+            ]
         }
         
-        Function("play") {
+        AsyncFunction("play") {
             audioProcessor?.play()
         }
         
-        Function("pause") {
+        AsyncFunction("pause") {
             audioProcessor?.pause()
         }
         
-        Function("seek") { to in
+        AsyncFunction("seek") { to in
             audioProcessor?.seek(to: to)
         }
         
