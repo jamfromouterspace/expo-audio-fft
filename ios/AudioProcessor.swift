@@ -38,14 +38,14 @@ class AudioProcessor {
         }
     }
     
-    func play() {
-        restartEngine()
+    func play() throws {
+        try restartEngine()
         if metadata == nil || player.engine == nil || !player.engine!.isRunning {
             return
         }
-        try! AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         if startFrom != nil {
-            if startFrom! < 0 {
+            if startFrom! < 0 || startFrom! > UInt32.max {
                 startFrom = 0
             }
             let diff = metadata!.totalSamples - UInt32(startFrom!)
@@ -96,38 +96,30 @@ class AudioProcessor {
     }
 
     
-    init(
-        onData: @escaping (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void)
+    init (
+        onData: @escaping (_ rawMagnitudes: [Float], _ bandMagnitudes: [Float], _ bandFrequencies: [Float], _ loudness: Float, _ currentTime: Double) -> Void) throws
     {
         self.onData = onData
-        startEngine()
+        try startEngine()
     }
     
-    func restartEngine() {
+    func restartEngine() throws {
         if player.engine != nil && !player.engine!.isRunning {
             print("restarting engine...")
             // restart audio engine
-            startEngine()
+            try startEngine()
             seek(to: currentTime)
         }
     }
     
-    func startEngine() {
+    func startEngine() throws {
         // initialize the main mixer node singleton
         _ = engine.mainMixerNode
         
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-        } catch {
-            fatalError("Audio engine failed to setCategory: \(error.localizedDescription)")
-        }
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         
-        do {
-            engine.prepare()
-            try engine.start()
-        } catch {
-            fatalError("Audio engine failed to start: \(error.localizedDescription)")
-        }
+        engine.prepare()
+        try engine.start()
                 
         let format = engine.mainMixerNode.outputFormat(forBus: 0)
         
@@ -193,7 +185,7 @@ class AudioProcessor {
     
     
     func load(localUri: String) throws {
-        restartEngine()
+        try restartEngine()
         startFrom = nil
         currentTimeOffset = 0
         currentTime = 0

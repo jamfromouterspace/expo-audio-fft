@@ -27,7 +27,7 @@ public class ExpoAudioFFTModule: Module {
         }
         
         AsyncFunction("init") { disableFFT in
-            audioProcessor = AudioProcessor(onData: { rawMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime in
+            audioProcessor = try AudioProcessor(onData: { rawMagnitudes, bandMagnitudes, bandFrequencies, loudness, currentTime in
                 self.sendEvent("onAudioBuffer", [
                     "rawMagnitudes": rawMagnitudes,
                     "bandMagnitudes": bandMagnitudes,
@@ -67,15 +67,15 @@ public class ExpoAudioFFTModule: Module {
         }
         
         AsyncFunction("play") {
-            audioProcessor?.play()
+            try audioProcessor?.play()
         }
         
         AsyncFunction("pause") {
-            audioProcessor?.pause()
+            try audioProcessor?.pause()
         }
         
         AsyncFunction("seek") { to in
-            audioProcessor?.seek(to: to)
+            try audioProcessor?.seek(to: to)
         }
         
         // Defines a JavaScript function that always returns a Promise and whose native code
