@@ -49,7 +49,9 @@ class AudioProcessor {
                 startFrom = 0
             }
             let diff = metadata!.totalSamples - UInt32(startFrom!)
+            print("diff", metadata!.totalSamples)
             let frameCount = AVAudioFrameCount(diff > 0 ? diff : 0)
+            print("frameCount", frameCount)
             player.stop()
             player.scheduleSegment(metadata!.file, startingFrame: startFrom!, frameCount: frameCount, at: nil)
             player.play()
@@ -77,20 +79,25 @@ class AudioProcessor {
             return nil
         }
         if let nodeTime = player.lastRenderTime, let playerTime = player.playerTime(forNodeTime: nodeTime), player.isPlaying {
+            print("Seeking to:", to)
             player.stop()
-            let sampleRate = playerTime.sampleRate // we could also use metadata.sampleRate, but playerTime has to be non-nil for this to work
+            let sampleRate = metadata?.sampleRate ?? playerTime.sampleRate
             let frames = Int64(to * sampleRate)
             print("to: \(to)", "frames: \(frames)", "total samples: \(metadata!.totalSamples)")
             let newPlayerTime = AVAudioTime(sampleTime: AVAudioFramePosition(frames), atRate: sampleRate)
             let newNodeTime = player.nodeTime(forPlayerTime: newPlayerTime)
+            print("1")
             let frameCount = AVAudioFrameCount(max(1, Int64(metadata!.totalSamples) - frames))
+            print("frameCount (seek)", frameCount)
             player.scheduleSegment(metadata!.file, startingFrame: AVAudioFramePosition(frames), frameCount: frameCount, at: nil, completionHandler: nil)
             player.play()
             currentTimeOffset = to
+            setCurrentTime()
             return to
         } else {
             currentTimeOffset = to
             startFrom = AVAudioFramePosition(Int(to * metadata!.sampleRate))
+            currentTime = currentTimeOffset
             return to
         }
     }
@@ -330,7 +337,7 @@ class AudioProcessor {
         if self.metadata == nil {
             self.currentTime = 0
         } else if let nodeTime = self.player.lastRenderTime, let playerTime = self.player.playerTime(forNodeTime: nodeTime) {
-            self.currentTime = self.currentTimeOffset + Double(playerTime.sampleTime) / self.metadata!.sampleRate
+            self.currentTime = self.currentTimeOffset + Double(playerTime.sampleTime) / playerTime.sampleRate
         } else {
             self.currentTime = 0
         }
