@@ -7,7 +7,7 @@ import {
 // Import the native module. On web, it will be resolved to ExpoAudioFFT.web.ts
 // and on native platforms to ExpoAudioFFT.ts
 import ExpoAudioFFTModule from "./ExpoAudioFFTModule";
-import ExpoAudioFFTView from "./ExpoAudioFFTView";
+import ExpoMetalShaderView from "./ExpoMetalShaderView";
 import {
   ChangeEventPayload,
   ExpoAudioFFTViewProps,
@@ -102,4 +102,4 @@ export function addProgressListener(
   return emitter.addListener("onProgress", listener);
 }
 
-export { ExpoAudioFFTView, ExpoAudioFFTViewProps, ChangeEventPayload };
+export { ExpoMetalShaderView, ExpoAudioFFTViewProps, ChangeEventPayload };
